@@ -4,7 +4,6 @@ with open("README.md", "r", encoding="utf-8") as readme:
     long_description = readme.read()
 
 
-# !MDC{set}{package_version = "{version}"}
 package_version = "2.1.0.dev0"
 
 
@@ -26,7 +25,7 @@ test = [
     "coverage",
     "pytest",
 ]
-dev = docs + lint + test
+dev = docs + lint + test + ["bump2version"]
 
 
 setuptools.setup(
