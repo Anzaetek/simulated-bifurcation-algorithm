@@ -24,13 +24,13 @@ import torch
 from numpy import ndarray
 
 from ..optimizer import SimulatedBifurcationEngine, SimulatedBifurcationOptimizer
-from .utils import safe_get_device, safe_get_dtype
+from .tensor_bearer import TensorBearer
 
 # Workaround because `Self` type is only available in Python >= 3.11
 SelfIsing = TypeVar("SelfIsing", bound="Ising")
 
 
-class Ising(object):
+class Ising(TensorBearer):
     """
     Internal implementation of the Ising model.
 
@@ -92,13 +92,10 @@ class Ising(object):
         dtype: Optional[torch.dtype] = None,
         device: Optional[Union[str, torch.device]] = None,
     ) -> None:
-        self._dtype = safe_get_dtype(dtype)
-        self._device = safe_get_device(device)
-
-        if isinstance(J, ndarray):
-            J = torch.from_numpy(J)
-        if isinstance(h, ndarray):
-            h = torch.from_numpy(h)
+        super().__init__(dtype=dtype, device=device)
+        J = self._safe_get_tensor(J)
+        if h is not None:
+            h = self._safe_get_tensor(h)
 
         if J.ndim != 2:
             raise ValueError(
@@ -110,27 +107,25 @@ class Ising(object):
                 f"Expected J to be square, but got {rows} rows and {cols} columns."
             )
 
-        self._J = J.to(dtype=self._dtype, device=self._device)
+        self._J = J
         self._dimension = rows
 
         if h is None:
-            self._h = torch.zeros(
-                self._dimension, dtype=self._dtype, device=self._device
-            )
+            self._h = torch.zeros(self._dimension, dtype=self.dtype, device=self.device)
         elif h.shape != (self._dimension,):
             raise ValueError(
                 f"Expected the shape of h to be {self._dimension}, but got {tuple(h.shape)}."
             )
         else:
-            self._h = h.to(dtype=self._dtype, device=self._device)
+            self._h = h
 
         self._has_linear_term = not torch.equal(
             self._h,
-            torch.zeros(self._dimension, dtype=self._dtype, device=self._device),
+            torch.zeros(self._dimension, dtype=self.dtype, device=self.device),
         )
 
     def __neg__(self) -> SelfIsing:
-        return self.__class__(-self._J, -self._h, self._dtype, self._device)
+        return self.__class__(-self._J, -self._h, self.dtype, self.device)
 
     def as_simulated_bifurcation_tensor(self) -> torch.Tensor:
         """
@@ -179,8 +174,8 @@ class Ising(object):
         if self._has_linear_term:
             sb_tensor = torch.zeros(
                 (self._dimension + 1, self._dimension + 1),
-                dtype=self._dtype,
-                device=self._device,
+                dtype=self.dtype,
+                device=self.device,
             )
             sb_tensor[: self._dimension, : self._dimension] = symmetrical_J
             sb_tensor[: self._dimension, self._dimension] = -self._h
@@ -351,6 +346,8 @@ class Ising(object):
             verbose,
             sampling_period,
             convergence_threshold,
+            self.dtype,
+            self.device,
         )
         tensor = self.as_simulated_bifurcation_tensor()
         spins = optimizer.run_integrator(tensor, early_stopping)

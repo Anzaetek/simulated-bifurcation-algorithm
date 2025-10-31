@@ -3,7 +3,7 @@ from typing import Union
 import numpy as np
 import pytest
 import torch
-from sympy import Poly, poly, symbols
+from sympy import poly, symbols
 
 from src.simulated_bifurcation.core import QuadraticPolynomial
 
@@ -21,8 +21,8 @@ def test_init_from_poly(dtype: torch.dtype, device: torch.device):
     )
     quadratic_polynomial = QuadraticPolynomial(polynomial, dtype=dtype, device=device)
 
-    assert quadratic_polynomial._dtype == dtype
-    assert quadratic_polynomial._device == device
+    assert quadratic_polynomial.dtype == dtype
+    assert quadratic_polynomial.device == device
     assert quadratic_polynomial._dimension == 3
     assert torch.equal(
         torch.tensor(
@@ -55,8 +55,8 @@ def test_init_from_poly_no_bias(dtype: torch.dtype, device: torch.device):
     )
     quadratic_polynomial = QuadraticPolynomial(polynomial, dtype=dtype, device=device)
 
-    assert quadratic_polynomial._dtype == dtype
-    assert quadratic_polynomial._device == device
+    assert quadratic_polynomial.dtype == dtype
+    assert quadratic_polynomial.device == device
     assert quadratic_polynomial._dimension == 3
     assert torch.equal(
         torch.tensor(
@@ -87,8 +87,8 @@ def test_init_from_poly_no_degree_1_monoms(dtype: torch.dtype, device: torch.dev
     polynomial = poly(x**2 + 3 * y**2 - 5 * z**2 + 4 * x * y - 2 * y * z + 6)
     quadratic_polynomial = QuadraticPolynomial(polynomial, dtype=dtype, device=device)
 
-    assert quadratic_polynomial._dtype == dtype
-    assert quadratic_polynomial._device == device
+    assert quadratic_polynomial.dtype == dtype
+    assert quadratic_polynomial.device == device
     assert quadratic_polynomial._dimension == 3
     assert torch.equal(
         torch.tensor(
@@ -119,8 +119,8 @@ def test_init_from_poly_no_degree_2_monoms(dtype: torch.dtype, device: torch.dev
     polynomial = poly(8 * x - 7 * y + z + 6)
     quadratic_polynomial = QuadraticPolynomial(polynomial, dtype=dtype, device=device)
 
-    assert quadratic_polynomial._dtype == dtype
-    assert quadratic_polynomial._device == device
+    assert quadratic_polynomial.dtype == dtype
+    assert quadratic_polynomial.device == device
     assert quadratic_polynomial._dimension == 3
     assert torch.equal(
         torch.tensor(
@@ -477,7 +477,7 @@ def test_build_polynomial_from_tensor(
 
     with pytest.raises(
         ValueError,
-        match="Inconsistant shape among provided tensors. Expected 3 but got 2.",
+        match="Inconsistent shape among provided tensors. Expected 3 but got 2.",
     ):
         QuadraticPolynomial(
             torch.zeros(3, 3, dtype=dtype, device=device),
@@ -486,7 +486,7 @@ def test_build_polynomial_from_tensor(
 
     with pytest.raises(
         ValueError,
-        match="Inconsistant shape among provided tensors. Expected 2 but got 3.",
+        match="Inconsistent shape among provided tensors. Expected 2 but got 3.",
     ):
         QuadraticPolynomial(
             torch.zeros(2, dtype=dtype, device=device),
@@ -496,8 +496,8 @@ def test_build_polynomial_from_tensor(
 
 def test_build_polynomial_with_wrong_domain():
     with pytest.raises(
-        ValueError,
-        match="Unsupported coefficient tensor type: <class 'str'>. Expected a torch.Tensor or a numpy.ndarray.",
+        TypeError,
+        match="Tensors can only be interpreted from NumPy arrays or int/float values.",
     ):
         QuadraticPolynomial("Hello world!")
 
